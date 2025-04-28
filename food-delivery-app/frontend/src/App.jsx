@@ -21,6 +21,7 @@ import { CartProvider } from './contexts/CartContext';
 import PrivateRoute from './components/PrivateRoute';
 import ThemeToggle from './components/ThemeToggle';
 import RestaurantDetails from './pages/RestaurantDetails';
+import UserManagement from './pages/UserManagement';
 
 // Create a context for theme mode
 export const ColorModeContext = createContext({
@@ -164,6 +165,15 @@ export default function App() {
                         </PrivateRoute>
                       } 
                     />
+		    <Route 
+                      path="/admin/users" 
+                      element={
+                        <PrivateRoute requiredRole="admin">
+                          <UserManagement />
+                        </PrivateRoute>
+                      } 
+                    />
+
                     <Route 
                       path="/restaurant/menu" 
                       element={
