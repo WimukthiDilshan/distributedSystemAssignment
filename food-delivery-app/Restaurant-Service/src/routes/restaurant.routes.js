@@ -1,10 +1,9 @@
 const express = require('express');
 const Restaurant = require('../models/restaurant.model');
-const User = require('../../../Auth-service/src/models/user.model');
+const axios = require('axios');
 const { auth, optionalAuth, checkRole } = require('../middleware/auth.middleware');
 const { upload, loggedUpload } = require('../middleware/upload.middleware');
 const path = require('path');
-const axios = require('axios');
 
 const router = express.Router();
 
@@ -14,8 +13,11 @@ router.get('/public', async (req, res) => {
     console.log('==========================================');
     console.log('GET /restaurants/public request');
     
-    // Only return restaurants that are available - explicitly set to true
-    const query = { isAvailable: true };
+    // Only return restaurants that are available and approved
+    const query = { 
+      isAvailable: true,
+      approvalStatus: 'approved'
+    };
     console.log('Query filter:', query);
     
     const restaurants = await Restaurant.find(query)
@@ -25,7 +27,7 @@ router.get('/public', async (req, res) => {
     // Log each restaurant availability status for debugging
     console.log('Restaurants availability status:');
     restaurants.forEach(restaurant => {
-      console.log(`Restaurant ID: ${restaurant._id}, Name: ${restaurant.name}, isAvailable: ${restaurant.isAvailable}`);
+      console.log(`Restaurant ID: ${restaurant._id}, Name: ${restaurant.name}, isAvailable: ${restaurant.isAvailable}, approvalStatus: ${restaurant.approvalStatus}`);
     });
     
     console.log(`Found ${restaurants.length} available restaurants for public view`);
@@ -758,6 +760,75 @@ router.get('/', optionalAuth, async (req, res) => {
     res.json(restaurants);
   } catch (error) {
     console.error('Error fetching restaurants:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Admin route: Get all restaurants (including pending ones) for system admin
+router.get('/admin/all', auth, checkRole('admin'), async (req, res) => {
+  try {
+    console.log('==========================================');
+    console.log('GET /restaurants/admin/all request by system admin');
+    console.log('==========================================');
+    
+    const restaurants = await Restaurant.find()
+      .populate('menu');
+    
+    res.json(restaurants);
+  } catch (error) {
+    console.error('Error fetching all restaurants for admin:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Admin route: Approve restaurant
+router.patch('/admin/approve/:id', auth, checkRole('admin'), async (req, res) => {
+  try {
+    console.log('==========================================');
+    console.log(`PATCH /restaurants/admin/approve/${req.params.id} request by system admin`);
+    console.log('==========================================');
+    
+    const restaurant = await Restaurant.findById(req.params.id);
+    
+    if (!restaurant) {
+      return res.status(404).json({ message: 'Restaurant not found' });
+    }
+    
+    restaurant.approvalStatus = 'approved';
+    await restaurant.save();
+    
+    res.json({
+      message: 'Restaurant approved successfully',
+      restaurant
+    });
+  } catch (error) {
+    console.error('Error approving restaurant:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Admin route: Reject restaurant
+router.patch('/admin/reject/:id', auth, checkRole('admin'), async (req, res) => {
+  try {
+    console.log('==========================================');
+    console.log(`PATCH /restaurants/admin/reject/${req.params.id} request by system admin`);
+    console.log('==========================================');
+    
+    const restaurant = await Restaurant.findById(req.params.id);
+    
+    if (!restaurant) {
+      return res.status(404).json({ message: 'Restaurant not found' });
+    }
+    
+    restaurant.approvalStatus = 'rejected';
+    await restaurant.save();
+    
+    res.json({
+      message: 'Restaurant rejected successfully',
+      restaurant
+    });
+  } catch (error) {
+    console.error('Error rejecting restaurant:', error);
     res.status(400).json({ message: error.message });
   }
 });
