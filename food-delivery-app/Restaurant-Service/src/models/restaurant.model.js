@@ -89,6 +89,11 @@ const restaurantSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  approvalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
   openingHours: {
     monday: { open: String, close: String },
     tuesday: { open: String, close: String },
