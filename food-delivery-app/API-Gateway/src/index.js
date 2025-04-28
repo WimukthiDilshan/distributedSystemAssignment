@@ -356,7 +356,8 @@ const orderServiceProxy = createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: {
     '^/api/cart': '/api/cart',
-    '^/api/orders': '/api/orders'
+    '^/api/orders': '/api/orders',
+    '^/api/payments': '/api/payments'
   },
   onProxyReq: function(proxyReq, req, res) {
     console.log(`[API Gateway] Forwarding ${req.method} request to Order Service:`, process.env.ORDER_SERVICE_URL + proxyReq.path);
@@ -462,6 +463,7 @@ app.use('/api/restaurants', restaurantServiceProxy);
 
 app.use('/api/cart', orderServiceProxy);
 app.use('/api/orders', orderServiceProxy);
+app.use('/api/payments',orderServiceProxy);
 app.use('/api/delivery', deliveryServiceProxy);
 
 // Error handling middleware
