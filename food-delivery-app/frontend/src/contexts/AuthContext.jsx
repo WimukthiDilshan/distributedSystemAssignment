@@ -39,6 +39,7 @@ export function AuthProvider({ children }) {
       console.error('Error fetching user:', error);
       localStorage.removeItem('token');
       setToken(null);
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -46,40 +47,23 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      // Check for hard-coded admin credentials
-      if (email === 'admin@gmail.com' && password === 'admin123') {
-        // Create a mock admin user and token
-        const adminUser = {
-          id: 'admin-id',
-          email: 'admin@gmail.com',
-          name: 'System Admin',
-          role: 'admin'
-        };
-        
-        // Create a token for the admin (even though it's not from the server)
-        const mockToken = 'admin-token-' + Math.random().toString(36).substring(2, 15);
-        
-        // Store in localStorage and state, similar to normal login
-        localStorage.setItem('token', mockToken);
-        setToken(mockToken);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${mockToken}`;
-        setUser(adminUser);
-        
-        toast.success('Admin login successful!');
-        return true;
-      }
-      
-      // Normal login for other users
       const response = await axios.post('http://localhost:3000/api/auth/login', {
         email,
         password,
       });
       
       const { token: newToken, user: userData } = response.data;
+      
+      // Store token in localStorage
       localStorage.setItem('token', newToken);
       setToken(newToken);
+      
+      // Set default Authorization header for all axios requests
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      
+      // Set user data
       setUser(userData);
+      
       toast.success('Login successful!');
       return true;
     } catch (error) {
@@ -93,10 +77,17 @@ export function AuthProvider({ children }) {
     try {
       const response = await axios.post('http://localhost:3000/api/auth/register', userData);
       const { token: newToken, user: newUser } = response.data;
+      
+      // Store token in localStorage
       localStorage.setItem('token', newToken);
       setToken(newToken);
+      
+      // Set default Authorization header for all axios requests
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      
+      // Set user data
       setUser(newUser);
+      
       toast.success('Registration successful!');
       return true;
     } catch (error) {
@@ -106,7 +97,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Function to update restaurant ID in context and localStorage
   const updateRestaurantId = async (restaurantId) => {
     try {
       // Update localStorage
@@ -145,10 +135,16 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    // Remove token from localStorage
     localStorage.removeItem('token');
+    
+    // Remove Authorization header from axios
     delete axios.defaults.headers.common['Authorization'];
+    
+    // Clear user state
     setUser(null);
     setToken(null);
+    
     toast.success('Logged out successfully');
   };
 
